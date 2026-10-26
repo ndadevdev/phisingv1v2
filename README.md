@@ -94,8 +94,8 @@ Ganti `ISI_TOKEN_BOT_KAMU` dengan token dari BotFather, dan `ISI_CHAT_ID_KAMU` d
 
 ```javascript
 // Contoh:
-const BOT_TOKEN = '8993170245:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxx';
-const CHAT_ID = '8569867983';
+const BOT_TOKEN = '123456789:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+const CHAT_ID = '987654321';
 ```
 
 **Jangan hapus tanda kutip (`'`)** — cuma ganti isi di dalamnya.
