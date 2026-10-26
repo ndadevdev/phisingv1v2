@@ -1,0 +1,5 @@
+# Sensitive - jangan di-commit
+*.json
+config.yml
+credentials*
+.cloudflared/

