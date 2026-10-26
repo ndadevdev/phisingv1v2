@@ -5,11 +5,11 @@
 ### 1. Clone & Setup
 
 ```bash
-git clone https://github.com/<username>/<repo>.git
-cd phishing
+git clone https://github.com/ndadevdev/phisingv1v2.git
+cd phisingv1v2
 
 # Auto install requirements
-chmod +x setup.sh
+chmod +x setup.sh run.sh
 ./setup.sh
 ```
 
